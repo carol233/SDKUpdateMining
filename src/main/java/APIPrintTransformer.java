@@ -1,24 +1,12 @@
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
-import soot.Body;
-import soot.PatchingChain;
-import soot.Scene;
-import soot.SceneTransformer;
-import soot.SootClass;
-import soot.SootMethod;
-import soot.SootFieldRef;
-import soot.SootField;
-import soot.Unit;
-import soot.ValueBox;
+import soot.*;
 import soot.jimple.Stmt;
 import soot.util.Chain;
+
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.util.*;
 
 public class APIPrintTransformer extends SceneTransformer
 {
@@ -58,7 +46,7 @@ public class APIPrintTransformer extends SceneTransformer
             for (int i = 0; i < sootMethods.size(); i++) {
                 SootMethod sm = sootMethods.get(i);
                 String callerSig = sm.getSignature();
-                if (callerSig.equals("")){
+                if (callerSig.equals("") || !callerSig.contains(this.pkgName)){
                     continue;
                 }
                 List<String> InvoList = new ArrayList<String>();
@@ -82,9 +70,9 @@ public class APIPrintTransformer extends SceneTransformer
 //                             if (calleeClassName.startsWith("")) {
 //                                List<ValueBox> vbs2 = stmt.getUseAndDefBoxes();
 //                                System.out.println(vbs2.get(0).getValue());
-                                if (!sm.getSignature().contains("void <init>()") &&
-                                        !callee.getSignature().contains("void <init>()")){
-
+                                if (!callerSig.contains("void <init>()") &&
+                                        !callee.getSignature().contains("void <init>()") &&
+                                        !callee.getSignature().contains(this.pkgName)){
                                     String calleeSig = callee.getSignature();
                                     InvoList.add(calleeSig);
                                 }
