@@ -66,17 +66,12 @@ public class APIPrintTransformer extends SceneTransformer
                             SootClass calleeClass = callee.getDeclaringClass();
                             String calleeClassName = calleeClass.getName();
 
-                            // Add restrictions on the API being called
-//                             if (calleeClassName.startsWith("")) {
-//                                List<ValueBox> vbs2 = stmt.getUseAndDefBoxes();
-//                                System.out.println(vbs2.get(0).getValue());
-                                if (!callerSig.contains("void <init>()") &&
-                                        !callee.getSignature().contains("void <init>()") &&
-                                        !callee.getSignature().contains(this.pkgName)){
-                                    String calleeSig = callee.getSignature();
-                                    InvoList.add(calleeSig);
-                                }
-//                            }
+                            String f = "<java.lang.Object: void <init>()>";
+                            if (!callee.getSignature().contains(this.pkgName)
+                                    && !callee.getSignature().contains(f)){
+                                String calleeSig = callee.getSignature();
+                                InvoList.add(calleeSig);
+                            }
                         }
                     }
                 } catch (Exception ex) {
