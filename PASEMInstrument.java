@@ -1,49 +1,14 @@
 package edu.monash.apkscan;
 
+import soot.*;
+import soot.jimple.*;
+import soot.options.Options;
+
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import soot.Body;
-import soot.BodyTransformer;
-import soot.ByteType;
-import soot.G;
-import soot.IntType;
-import soot.Local;
-import soot.PackManager;
-import soot.PatchingChain;
-import soot.PrimType;
-import soot.RefType;
-import soot.Scene;
-import soot.ShortType;
-import soot.SootClass;
-import soot.SootField;
-import soot.SootMethod;
-import soot.Transform;
-import soot.Type;
-import soot.Unit;
-import soot.UnitBox;
-import soot.Value;
-import soot.ValueBox;
-import soot.jimple.AbstractStmtSwitch;
-import soot.jimple.AssignStmt;
-import soot.jimple.EqExpr;
-import soot.jimple.GotoStmt;
-import soot.jimple.IfStmt;
-import soot.jimple.InvokeExpr;
-import soot.jimple.InvokeStmt;
-import soot.jimple.Jimple;
-import soot.jimple.JimpleBody;
-import soot.jimple.NeExpr;
-import soot.jimple.NewExpr;
-import soot.jimple.NullConstant;
-import soot.jimple.Stmt;
-import soot.jimple.StringConstant;
-import soot.jimple.VirtualInvokeExpr;
-import soot.options.Options;
 
 public class SEAInstrument {
 	public static final String TAG = "Pei";

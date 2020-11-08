@@ -4,6 +4,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import soot.*;
 import soot.jimple.AssignStmt;
 import soot.jimple.IfStmt;
+import soot.jimple.ReturnStmt;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 
@@ -15,17 +16,15 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SDKUpdateTransformer extends BodyTransformer
+public class SDKUpdateTransformer_old extends BodyTransformer
 {
-
     private String Sha256;
     private String pkgName;
     private String outputPath;
     private String outputSaveAPI;
-    private  List<String> OldList = new ArrayList<>();
-    private  List<String> NewList = new ArrayList<>();
+    private HashMap<String, List<String>> CDA_dict;
 
-    SDKUpdateTransformer(String appPath, String outputPath, String outputSaveAPI, String CDA_path) {
+    SDKUpdateTransformer_old(String appPath, String outputPath, String outputSaveAPI, String CDA_path) {
         this.pkgName = getPackageName(appPath);
         List<String> pathElements = new ArrayList<>();
         Paths.get(appPath).forEach(p -> pathElements.add(p.toString()));
@@ -35,7 +34,7 @@ public class SDKUpdateTransformer extends BodyTransformer
         this.outputSaveAPI = outputSaveAPI;
 
         try {
-            loadfromCDAFile(CDA_path);
+            CDA_dict = loadfromCDAFile(CDA_path);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -44,7 +43,6 @@ public class SDKUpdateTransformer extends BodyTransformer
     protected void internalTransform(final Body body, String phaseName, @SuppressWarnings("rawtypes") Map options) {
         final PatchingChain<Unit> units = body.getUnits();
         Value sdkValue = null;
-        boolean flag_protected = false;
 
         for (Iterator<Unit> unitIter = units.snapshotIterator(); unitIter.hasNext(); ) {
             Stmt stmt = (Stmt) unitIter.next();
@@ -66,13 +64,12 @@ public class SDKUpdateTransformer extends BodyTransformer
             }
 
             if (stmt instanceof IfStmt && null != sdkValue) {
-
                 IfStmt ifStmt = (IfStmt) stmt;
                 List<ValueBox> bv = ifStmt.getCondition().getUseBoxes();
 
-//                if (ifStmt.getTarget() instanceof ReturnStmt) {
-//                    continue;
-//                }
+                if (ifStmt.getTarget() instanceof ReturnStmt) {
+                    continue;
+                }
 
                 if (bv.size() != 2) {     // check if the stmt is the SDK_INT compare: if $i0 < 16 goto return
                     continue;
@@ -94,9 +91,6 @@ public class SDKUpdateTransformer extends BodyTransformer
                     }
                 }
 
-                flag_protected = true;
-                // step in a new one
-                String case_ = "";
                 boolean flag_old = false;
                 boolean flag_new = false;
                 String API_old = null;
@@ -109,26 +103,6 @@ public class SDKUpdateTransformer extends BodyTransformer
                     if (s instanceof AssignStmt) {    // if encounter a new assignment to the SDK_INT var, break the while loop
                         AssignStmt as1 = (AssignStmt) s;
                         if (as1.getLeftOp().equivTo(sdkValue)) {
-                            // the last if - else ends
-                            if (flag_old && API_old != null && !flag_new) {
-                                try {
-                                    case_ = "only old";
-                                    if (SaveResults(body.getMethod().getSignature(), API_old, "None", case_)) {
-                                        System.out.println("Results saving error!");
-                                    }
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            } else if (flag_new && API_new != null && !flag_old) {
-                                try {
-                                    case_ = "only new";
-                                    if (SaveResults(body.getMethod().getSignature(), "None", API_new, case_)) {
-                                        System.out.println("Results saving error!");
-                                    }
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
                             break;
                         }
                     }
@@ -138,65 +112,29 @@ public class SDKUpdateTransformer extends BodyTransformer
 //                                        SootClass calleeClass = callee.getDeclaringClass();
 //                                        String calleeClassName = calleeClass.getName();
                         String calleeSig = callee.getSignature();
-                        if (this.OldList.contains(calleeSig)) {
-                            flag_old = true;
-                            API_old = calleeSig;
-                        } else if (this.NewList.contains(calleeSig)){ // now is new, then find the old one
-                            flag_new = true;
-                            API_new = calleeSig;
+                        if (CDA_dict.containsKey(calleeSig)) {
+                            List<String> tmps = CDA_dict.get(calleeSig);
+                            if (tmps.get(0).equals("old")) {
+                                flag_old = true;
+                                API_old = calleeSig;
+                            } else { // now is new, then find the old one
+                                flag_new = true;
+                                API_new = calleeSig;
+                            }
                         }
                     }
 
-                    if (flag_old && flag_new && API_old != null && API_new != null) {
-                        // find all, break the while loop
+                    if (flag_old && flag_new && API_old != null && API_new != null) {  // get to the if stmt target, break the while loop
                         try {
-                            case_ = "both old and new";
-                            if (SaveResults(body.getMethod().getSignature(), API_old, API_new, case_)) {
+                            System.out.println(API_old);
+                            System.out.println(API_new);
+                            if (!SaveResults(body.getMethod().getSignature(), API_old)) {
                                 System.out.println("Results saving error!");
                             }
-                            flag_old = flag_new = false;
-                            API_old = API_new = null;
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
                         break;
-                    }
-
-                }
-
-                if (!unitIter.hasNext() && !case_.equals("both old and new")) {
-                    if (flag_old && API_old != null) {
-                        try {
-                            case_ = "only old";
-                            if (SaveResults(body.getMethod().getSignature(), API_old, "None", case_)) {
-                                System.out.println("Results saving error!");
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    } else if (flag_new && API_new != null) {
-                        try {
-                            case_ = "only new";
-                            if (SaveResults(body.getMethod().getSignature(), "None", API_new, case_)) {
-                                System.out.println("Results saving error!");
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }
-
-            if (!flag_protected && stmt.containsInvokeExpr()){
-                SootMethod callee = stmt.getInvokeExpr().getMethod();
-                String calleeSig = callee.getSignature();
-                if (this.OldList.contains(calleeSig)) {
-                    try {
-                        if (SaveResults(body.getMethod().getSignature(), calleeSig, "None", "none protected")) {
-                            System.out.println("Results saving error!");
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     }
                 }
             }
@@ -245,9 +183,9 @@ public class SDKUpdateTransformer extends BodyTransformer
         return packageName;
     }
 
-    private void loadfromCDAFile(String CDApath) throws IOException {
-        this.OldList.add("<TakePlace>");
-        this.NewList.add("<TakePlace>");
+    private static HashMap<String, List<String>> loadfromCDAFile(String CDApath) throws IOException {
+        int i = 1;
+        HashMap<String, List<String>> dic = new HashMap<>();
         File filename = new File(CDApath); // 要读取以上路径的input.txt文件
         InputStreamReader reader = new InputStreamReader(
                 new FileInputStream(filename)); // 建立一个输入流对象reader
@@ -256,21 +194,25 @@ public class SDKUpdateTransformer extends BodyTransformer
         line = br.readLine();
         while (line != null) {
             // (14)<android.widget.RemoteViews: void setRemoteAdapter(int,int,android.content.Intent)>[normal]    ---->    <android.widget.RemoteViews: void setRemoteAdapter(int,android.content.Intent)>[normal]
-            Pattern pattern = Pattern.compile("\\S+(<\\S+:\\s\\S+\\s[\\w<>]+\\(.*\\)>)[\\s\\S]+----> {1,10}(<\\S+:\\s\\S+\\s[\\w<>]+\\(.*\\)>)[\\s\\S]+");
+            Pattern pattern = Pattern.compile("\\S+(<\\S+:\\s\\S+\\s\\w+\\(.*\\)>)\\S+ {1,10}----> {1,10}(<\\S+:\\s\\S+\\s\\w+\\(.*\\)>)\\S+");
             Matcher matcher = pattern.matcher(line);
             if (matcher.find()) {
                 String old_sig = matcher.group(1);
                 String new_sig = matcher.group(2);
-                this.OldList.add(old_sig);
-                this.NewList.add(old_sig);
+                List<String> tmp1 = Arrays.asList("old", new_sig, Integer.toString(i));
+                i += 1;
+                List<String> tmp2 = Arrays.asList("new", old_sig);
+                dic.put(old_sig, tmp1);
+                dic.put(new_sig, tmp2);
             }
             line = br.readLine(); // 一次读入一行数据
         }
-        System.out.println(this.OldList.size());
+        System.out.println(dic.size());
+        return dic;
     }
 
-    private boolean SaveResults(String methodSig, String old_API, String new_API, String case_) throws IOException {
-        String fold_subname = Integer.toString(this.OldList.indexOf(old_API));
+    private boolean SaveResults(String methodSig, String old_API) throws IOException {
+        String fold_subname = CDA_dict.get(old_API).get(2);
         Path dir_path = Paths.get(outputSaveAPI, fold_subname);
         if (CheckandMkdir(dir_path.toString())){
             File file = new File(dir_path.toString(), Sha256 + ".txt");
@@ -286,16 +228,16 @@ public class SDKUpdateTransformer extends BodyTransformer
             CSVFormat csvFormat = CSVFormat.DEFAULT;
             CSVPrinter csvPrinter = new CSVPrinter(osw, csvFormat);
 
-            System.out.println("case_ = " + case_+ ", Old_API = " + old_API + ", Method_Signature = " + methodSig);
-            csvPrinter.printRecord(case_, old_API, new_API, methodSig);
+            System.out.println("Old_API = " + old_API + ", Method_Signature = " + methodSig);
+            csvPrinter.printRecord(old_API, methodSig);
 
             csvPrinter.flush();
             csvPrinter.close();
 
-            return false;
+            return true;
 
         } else {
-            return true;
+            return false;
         }
     }
 
