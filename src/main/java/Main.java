@@ -38,7 +38,7 @@ public class Main
         G.reset();
 
 
-        SDKUpdateTransformer_old transformer = new SDKUpdateTransformer_old(appPath, outputPath, outputSaveAPI, CDA_path);
+        SDKUpdateTransformer transformer = new SDKUpdateTransformer(appPath, outputPath, outputSaveAPI, CDA_path);
 
         Options.v().set_src_prec(Options.src_prec_apk);
         // Options.v().set_output_format(Options.output_format_jimple);

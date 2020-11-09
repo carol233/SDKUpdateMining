@@ -1,7 +1,5 @@
 package edu.monash.apkscan;
 
-import soot.*;
-import soot.jimple.*;
 import soot.options.Options;
 
 import java.io.File;

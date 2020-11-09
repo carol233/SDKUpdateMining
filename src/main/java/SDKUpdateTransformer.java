@@ -110,7 +110,7 @@ public class SDKUpdateTransformer extends BodyTransformer
                         AssignStmt as1 = (AssignStmt) s;
                         if (as1.getLeftOp().equivTo(sdkValue)) {
                             // the last if - else ends
-                            if (flag_old && API_old != null && !flag_new) {
+                            if (flag_old && API_new == null && API_old != null  && !flag_new ) {
                                 try {
                                     case_ = "only old";
                                     if (SaveResults(body.getMethod().getSignature(), API_old, "None", case_)) {
@@ -119,7 +119,7 @@ public class SDKUpdateTransformer extends BodyTransformer
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
-                            } else if (flag_new && API_new != null && !flag_old) {
+                            } else if (flag_new && API_old == null && API_new != null && !flag_old) {
                                 try {
                                     case_ = "only new";
                                     if (SaveResults(body.getMethod().getSignature(), "None", API_new, case_)) {
@@ -135,8 +135,6 @@ public class SDKUpdateTransformer extends BodyTransformer
 
                     if (s.containsInvokeExpr()) {
                         SootMethod callee = s.getInvokeExpr().getMethod();
-//                                        SootClass calleeClass = callee.getDeclaringClass();
-//                                        String calleeClassName = calleeClass.getName();
                         String calleeSig = callee.getSignature();
                         if (this.OldList.contains(calleeSig)) {
                             flag_old = true;
@@ -192,7 +190,15 @@ public class SDKUpdateTransformer extends BodyTransformer
                 String calleeSig = callee.getSignature();
                 if (this.OldList.contains(calleeSig)) {
                     try {
-                        if (SaveResults(body.getMethod().getSignature(), calleeSig, "None", "none protected")) {
+                        if (SaveResults(body.getMethod().getSignature(), calleeSig, "None", "none protected old")) {
+                            System.out.println("Results saving error!");
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else if (this.NewList.contains(calleeSig)) {
+                    try {
+                        if (SaveResults(body.getMethod().getSignature(), "None", calleeSig, "none protected new")) {
                             System.out.println("Results saving error!");
                         }
                     } catch (IOException e) {
@@ -262,7 +268,7 @@ public class SDKUpdateTransformer extends BodyTransformer
                 String old_sig = matcher.group(1);
                 String new_sig = matcher.group(2);
                 this.OldList.add(old_sig);
-                this.NewList.add(old_sig);
+                this.NewList.add(new_sig);
             }
             line = br.readLine(); // 一次读入一行数据
         }
@@ -270,7 +276,12 @@ public class SDKUpdateTransformer extends BodyTransformer
     }
 
     private boolean SaveResults(String methodSig, String old_API, String new_API, String case_) throws IOException {
-        String fold_subname = Integer.toString(this.OldList.indexOf(old_API));
+        String fold_subname;
+        if (old_API.equals("None")){
+            fold_subname = Integer.toString(this.NewList.indexOf(new_API));
+        } else {
+            fold_subname = Integer.toString(this.OldList.indexOf(old_API));
+        }
         Path dir_path = Paths.get(outputSaveAPI, fold_subname);
         if (CheckandMkdir(dir_path.toString())){
             File file = new File(dir_path.toString(), Sha256 + ".txt");
@@ -286,7 +297,7 @@ public class SDKUpdateTransformer extends BodyTransformer
             CSVFormat csvFormat = CSVFormat.DEFAULT;
             CSVPrinter csvPrinter = new CSVPrinter(osw, csvFormat);
 
-            System.out.println("case_ = " + case_+ ", Old_API = " + old_API + ", Method_Signature = " + methodSig);
+            System.out.println("case_ = " + case_+ ", Old_API = " + old_API + ", New_API = " + new_API + ", Method_Signature = " + methodSig);
             csvPrinter.printRecord(case_, old_API, new_API, methodSig);
 
             csvPrinter.flush();
