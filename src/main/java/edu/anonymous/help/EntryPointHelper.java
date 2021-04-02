@@ -149,6 +149,4 @@ public class EntryPointHelper {
         }
         GlobalRef.dynamicFragment.addAll(dynamicFragment);
     }
-
-
 }

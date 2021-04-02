@@ -114,7 +114,7 @@ public class CFGGenerator extends BodyTransformer {
         }
         filename = filename + classname + " " + methodname.replace(java.io.File.separatorChar, '.') + DotGraph.DOT_EXTENSION;
 
-        G.v().out.println("Generate dot file in " + filename);
+//        G.v().out.println("Generate dot file in " + filename);
         canvas.plot(filename);
     }
 

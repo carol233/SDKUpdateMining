@@ -1,3 +1,5 @@
+package SDKUpdateMining;
+
 import Helper.ApplicationClassFilter;
 import Helper.cgHelper;
 import Model.BranchUnit;
@@ -29,18 +31,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
-public class Main
-{
-    /**
-     *
-     * cd ~/testenv
-     * git clone https://github.com/lilicoding/android-platforms
-     *
-     * args[1] == ~/testenv/android-platforms
-     *
-     */
-
-
+public class Main {
     public static void main(String[] args) throws FileNotFoundException {
         // 11A9EBD9C663CA920D4A3F94A9304431A5AE94F37E35A7802A41801FE0F99FD2.apk /Users/yzha0544/Library/Android/sdk/platforms output.csv
         String appPath = args[0];

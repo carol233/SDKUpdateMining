@@ -1,3 +1,5 @@
+package SDKUpdateMining;
+
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.xmlpull.v1.XmlPullParserException;

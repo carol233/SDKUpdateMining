@@ -33,7 +33,7 @@ public class SootSetup {
 
         Scene.v().addBasicClass("java.io.FileSystem",HIERARCHY);
         Scene.v().addBasicClass("com.example.androidthings.bluetooth.audio.A2dpSinkActivity", SootClass.BODIES);
-        config.setWriteOutputFiles(true);
+        config.setWriteOutputFiles(false);
         Options.v().set_no_bodies_for_excluded(true);
         Options.v().set_soot_classpath(forceAndroidJar);
         Options.v().set_prepend_classpath(true);

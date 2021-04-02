@@ -1,3 +1,5 @@
+package SDKUpdateMining;
+
 import Helper.ApplicationClassFilter;
 import Helper.cgHelper;
 import Model.BranchUnit;
