@@ -47,6 +47,7 @@ public class Main {
         Scene.v().getApplicationClasses().forEach(aClass -> {
 
             aClass.getMethods().stream().filter(am -> am.isConcrete()
+                    // todo: filter the class
                     && !ApplicationClassFilter.isClassInSystemPackage(am.getDeclaringClass().getName())
                     && !am.getSignature().contains("dummyMainClass")).forEach(targetMethod -> {
                 DirectedGraph<Unit> ug = iCfg.getOrCreateUnitGraph(targetMethod.retrieveActiveBody());
@@ -159,8 +160,7 @@ public class Main {
         List<Stmt> allElseBranchStmt = findBranchStmts(originStmt, ug, new HashSet<>());
         List<UnitInfo> allUnits = new ArrayList<>();
         for (Stmt elseBranchStmt : allElseBranchStmt) {
-            if (elseBranchStmt.containsInvokeExpr()
-                // && !ApplicationClassFilter.isClassSystemPackage(convert2PatternMethod(elseBranchStmt.toString()))
+            if (elseBranchStmt.containsInvokeExpr() && !ApplicationClassFilter.isClassSystemPackage(convert2PatternMethod(elseBranchStmt.toString()))
             ) {
                 allUnits.addAll(cgHelper.collectInvokeAPIs(elseBranchStmt, method));
             } else {
