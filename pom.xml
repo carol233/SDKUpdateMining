@@ -145,7 +145,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.6</version>
+            <version>1.7.35</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -264,7 +264,7 @@
                     <archive>
                         <manifest>
                             <!--注意，此处必须是main()方法对应类的完整路径  -->
-                            <mainClass>SDKUpdateMining.Main</mainClass>
+                            <mainClass>SDKUpdateMining.Main_old</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
